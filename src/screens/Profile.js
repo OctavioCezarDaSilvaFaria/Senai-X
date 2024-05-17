@@ -27,10 +27,31 @@ export default function Profile() {
   const [password, setPassword] = useState("");
   const [editable, setEditable] = useState(false);
   const [photoUrl, setPhotoUrl] = useState("");
-  const {updateUser} = useAuth();
+  const { updateUser, signOut } = useAuth();
 
-  // sdsds
-  // sdsd
+  async function handleSubmit() {
+    setError("");
+      if (!email.trim() || !username.trim() || !password.trim()) {
+        setError("Por favor, preencha todos os campos!");
+        return;
+      }
+      try {
+        await api.patch("profile", {
+          email,
+          username,
+          password,
+        })
+        Alert.alert("Sucesso", "Usuário atualizado com êxito")
+        setEditable(false)
+      }catch(error) {
+        if (error.response) {
+          setError(error.response.data.message);
+        }
+        else{
+          setError("Não foi possível se conectar com o servidor");
+        }
+      }
+  }
 
   async function pickImage() {
     let permissionResult =
@@ -118,46 +139,46 @@ export default function Profile() {
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      try{
-        const {data} = await api.get("/profile");
+      try {
+        const { data } = await api.get("/profile");
         setEmail(data.email);
         setUsername(data.username);
         setPhotoUrl(data.photoUrl);
       }
       catch (error) {
         console.log(error);
-    }
-  };
-  fetchUserProfile();
-  },[])
+      }
+    };
+    fetchUserProfile();
+  }, [])
 
 
   return (
     <ScrollView contentContainerStyle={style.container}>
       <View style={{ backgroundColor: "#1B1B1F", alignItems: "center" }}>
         <View style={style.header}>
-          <TouchableOpacity onPress={()=> setEditable(true)}>
+          <TouchableOpacity onPress={() => setEditable(true)}>
             <MaterialCommunityIcons name="pencil" size={28} color="#fff" />
           </TouchableOpacity>
           <Text style={{ fontSize: 28, fontWeight: "600", color: "#ffffff" }}>
             Perfil
           </Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={()=> signOut()}>
             <MaterialCommunityIcons name="logout" size={28} color="#fff" />
           </TouchableOpacity>
         </View>
         <View style={style.profileImageContainer}>
           <Image
-          key={photoUrl}
-          style={style.profileImage}
-          source={
-            photoUrl ? {uri:`http://10.0.2.2:3333/${photoUrl}`} : UserPhoto
-          }
+            key={photoUrl}
+            style={style.profileImage}
+            source={
+              photoUrl ? { uri: `http://10.0.2.2:3333/${photoUrl}` } : UserPhoto
+            }
           />
-          <TouchableOpacity style={style.cameraButton} onPress={()=> pickImage()}>
+          <TouchableOpacity style={style.cameraButton} onPress={() => pickImage()}>
             <MaterialIcons name="camera-alt" size={32} color="white" />
           </TouchableOpacity>
-      </View>
+        </View>
       </View>
       <Text style={style.username}>{username}</Text>
 
@@ -206,28 +227,32 @@ export default function Profile() {
           <View>
             {editable && (
               <View style={style.inputBox}>
-              <Feather name="lock" size={24} color="#8a8787" />
-              <TextInput
-                style={style.input}
-                value={password}
-                editable={editable}
-                onChangeText={(text) => {
-                  setPassword(text);
-                }}
-                placeholderTextColor="#AEAEB3"
-                secureTextEntry
-                placeholder="Senha atual ou nova senha"
-              />
-            </View>
+                <Feather name="lock" size={24} color="#8a8787" />
+                <TextInput
+                  style={style.input}
+                  value={password}
+                  editable={editable}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                  }}
+                  placeholderTextColor="#AEAEB3"
+                  secureTextEntry
+                  placeholder="Senha atual ou nova senha"
+                />
+              </View>
             )}
             <Text style={style.error}>{error}</Text>
           </View>
         </View>
         {editable && (
           <View style={{ gap: 8, marginTop: 16, flexDirection: "row" }}>
-          <MyButton style={{ flex: 1 }} text="Cancelar" />
-          <MyButton style={{ flex: 1 }} text="Salvar alterações" />
-        </View>
+            <MyButton style={{ flex: 1 }} text="Cancelar" />
+            <MyButton
+            onPress={()=> handleSubmit()} 
+            style={{ flex: 1 }} 
+            text="Salvar alterações" 
+            />
+          </View>
         )}
       </View>
     </ScrollView>
